@@ -24,7 +24,7 @@
   <body
     class="bg-gray-900 text-gray-300 min-h-screen flex items-center justify-center p-4"
   >
-    <div class="max-w-lg w-full">
+    <div class="max-w-lg w-full flex flex-col justify-center">
       <h1 class="text-3xl mb-8 text-center font-light text-gray-400">
         qwen chat
       </h1>
@@ -70,11 +70,21 @@
         </button>
       </div>
 
+      <input type="text" id="prompttext" oninput="addText()" class="text-black">
+      <br>
+
       <input
         type="file"
         id="fileInput"
         class="hidden"
         onchange="handleFile()"
+      />
+
+      <input
+        type="file"
+        id="videoInput"
+        class="hidden"
+        onchange="handleVideo()"
       />
 
       <div class="text-center">
@@ -96,10 +106,22 @@
     <script>
       let mediaType = null;
       let file = null;
+      let video = null;
+      let text = "";
 
       function selectMedia(type) {
         mediaType = type;
-        document.getElementById("fileInput").click();
+        if(mediaType === "video") document.getElementById("videoInput").click();
+        else document.getElementById("fileInput").click();
+      }
+
+      function handleVideo() {
+        video = document.getElementById("videoInput").files[0];
+        if (video) {
+          const submitBtn = document.getElementById("submitBtn");
+          submitBtn.classList.remove("hidden");
+          submitBtn.classList.add("animate-pulse");
+        }
       }
 
       function handleFile() {
@@ -112,16 +134,20 @@
       }
 
       function submitMedia() {
-        if (!file) return;
+        if (!file || !video || text.length===0) return;
 
         const formData = new FormData();
-        formData.append(mediaType + "s", file);
+        formData.append("imagess", file);
+        formData.append("videos", video)
+        //formData.append("text", "describe this image");
 
         const submitBtn = document.getElementById("submitBtn");
         submitBtn.textContent = "processing...";
         submitBtn.disabled = true;
 
-        fetch("http://127.0.0.1:8000/qwen", {
+        
+
+        fetch("http://12.1.52.180:8000/qwen?" + new URLSearchParams({"text": "describe this image"}), {
           method: "POST",
           body: formData,
         })
@@ -137,6 +163,14 @@
             document.getElementById("result").classList.remove("hidden");
             resetSubmitButton();
           });
+      }
+
+      function addText() {
+        text = document.getElementById("prompttext").value
+        if(text.length > 0) {
+          submitBtn.classList.remove("hidden");
+          submitBtn.classList.add("animate-pulse");
+        }
       }
 
       function resetSubmitButton() {
