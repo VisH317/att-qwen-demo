@@ -115,7 +115,8 @@
         if (!file) return;
 
         const formData = new FormData();
-        formData.append(mediaType + "s", file);
+        formData.append(mediaType + "s", [file]);
+        formData.append("text", "describe this image")
 
         const submitBtn = document.getElementById("submitBtn");
         submitBtn.textContent = "processing...";

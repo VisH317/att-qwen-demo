@@ -1,15 +1,18 @@
 from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor
 from qwen_vl_utils import process_vision_info
 
-model = Qwen2VLForConditionalGeneration.from_pretrained(
-    "Qwen/Qwen2-VL-7B-Instruct-AWQ", torch_dtype="auto", device_map="cuda" # set to float16 or bfloat, attn_implementation="flash_attention_2"
-)
 
-# default processer
-processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct-AWQ")
+def create_model():
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        "Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4", torch_dtype="auto", device_map="balanced", low_cpu_mem_usage=True # set to float16 or bfloat, attn_implementation="flash_attention_2"
+    )
+    model.eval()
+    
+    return model
 
+processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4")
 
-def run_qwen(text: str, images: list[str], videos: list[str]):
+def run_qwen(model, text: str, images: list[str], videos: list[str]):
 
     messages = [
         {
@@ -45,3 +48,6 @@ def run_qwen(text: str, images: list[str], videos: list[str]):
         generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
     )
     return output_text
+
+if __name__ == "__main__":
+    pass
