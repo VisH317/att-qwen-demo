@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile, Form
 from typing import Annotated
 from run_qwen import run_qwen, create_model
 import base64
+import cv2
+import os
 from io import BytesIO
 from contextlib import asynccontextmanager
 from PIL import Image
@@ -59,10 +61,46 @@ async def qwen_handler(text: str, images: Optional[UploadFile] = File(None), vid
 
         with tempfile.NamedTemporaryFile(suffix=".mp4") as temp_video_file:
             temp_video_file.write(video_stream.getvalue())
+            tempfile_name = temp_video_file.name
+        
+            # Open the video using OpenCV
+            cap = cv2.VideoCapture(tempfile_name)
+            
+            # Get video properties
+            frame_rate = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
+            width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))   # Width of the frames
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Height of the frames
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Codec for .mp4
 
-            print(temp_video_file.name)
-            output_text = run_qwen(context["model"], text, image, [temp_video_file.name])
-            return output_text
+            # Create a VideoWriter object to write the output video
+
+            with tempfile.NamedTemporaryFile(suffix=".mp4") as file:
+                out = cv2.VideoWriter(file.name, fourcc, frame_rate, (width, height))
+
+                frame_count = 0
+
+                while cap.isOpened():
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+
+                    # Write every 30th frame to the output video
+                    if frame_count % 30 == 0:
+                        out.write(frame)
+                        print("count: ", frame_count)
+
+                    frame_count += 1
+
+                # Release the resources
+                cap.release()
+                out.release()
+
+                print(file.name)
+                output_text = run_qwen(context["model"], text, image, [file.name])
+                return output_text
+
+        # Remove the temporary input video file
+        os.remove(tempfile_name)
 
     else:
         output_text = run_qwen(context["model"], text, image, [])
