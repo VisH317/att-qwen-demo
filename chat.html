@@ -134,11 +134,16 @@
       }
 
       function submitMedia() {
-        if (!file || !video || text.length===0) return;
+        console.log("hola")
+        console.log(file, video, text)
+        if (!file && !video && text.length===0) return;
+
+        console.log("aiwuefaoiuwefh")
 
         const formData = new FormData();
-        formData.append(mediaType + "s", [file]);
-        formData.append("text", "describe this image")
+        if(file) formData.append("images", file);
+        if(video) formData.append("videos", video)
+        formData.append("text", text);
 
         const submitBtn = document.getElementById("submitBtn");
         submitBtn.textContent = "processing...";
@@ -146,7 +151,7 @@
 
         
 
-        fetch("http://12.1.52.180:8000/qwen?" + new URLSearchParams({"text": "describe this image"}), {
+        fetch("http://12.1.52.180:8000/qwen?" + new URLSearchParams({"text": text}), {
           method: "POST",
           body: formData,
         })
